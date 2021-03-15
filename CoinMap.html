@@ -1,0 +1,126 @@
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>USA State Quaters</title>
+</head>
+<script src="static/echarts.min.js"></script>
+<script src="static/jQuery3.4.1.js"></script>
+<body>
+<div id="USAMap" style="width:100%;height:100%;"></div>
+</body>
+
+<script>
+var myChart = echarts.init(document.getElementById("USAMap"));
+myChart.showLoading();var coindata = [];
+var clickTimes=0;
+myChart.on('click', function(params){
+    clickTimes++; 
+    if(clickTimes==2){
+        clickTimes=0;
+        coindata.forEach(function(element,index,array){
+            if(params.name == element.name) array[index].selected = !element.selected;
+            refreshMap();
+            //todo
+        });
+    }
+    setTimeout(function(){
+        if(clickTimes==1){
+           clickTimes=0;
+        }
+    },250);
+});
+window.onload = function(){
+    var url = "static/statecoins.json";
+    var request = new XMLHttpRequest();
+    request.open("get", url);
+    request.setRequestHeader('Cache-Control', 'no-cache');
+    request.send(null);
+    request.onload = function(){
+        if(request.status == 200) {
+            coindata = JSON.parse(request.responseText);
+            refreshMap();
+        }
+    }
+}
+function refreshMap(){
+    $.get('static/USA.json', function (usaJson) {
+        myChart.hideLoading();
+        echarts.registerMap('USA', usaJson, {
+            Alaska: {
+                left: -125,
+                top: 25,
+                width: 15
+            },
+            Hawaii: {
+                left: -110,
+                top: 25,
+                width: 5
+            },
+            'Puerto Rico': {
+                left: -76,
+                top: 26,
+                width: 2
+            }
+        });
+        option = {
+            title: {
+                text: 'USA State Quaters',
+                link: 'https://www.usmint.gov/learn/coin-and-medal-programs/50-state-quarters',
+                subtext: 'Collection Map',
+                sublink: 'https://statesymbolsusa.org/categories/state-quarter',
+                left: 'right'
+            },
+            tooltip: {
+                trigger: 'item',
+                showDelay: 0,
+                transitionDuration: 0.2,
+                formatter: function (params) {
+                    return "<img src='static/picture/"+params.name+".jpg'/>";
+                }
+            },
+            visualMap: {
+                left: 'right',
+                top: 'middle',
+                min: '0',
+                max: '1',
+                inRange: {
+                    color: ['#eeeeee', '#fee090']
+                },
+                text: ['Have', 'Not'],
+                calculable: false
+            },
+            toolbox: {
+                show: true,
+                //orient: 'vertical',
+                left: 'right',
+                top: 'bottom',
+                feature: {
+                    dataView: {readOnly: false},
+                    restore: {},
+                    saveAsImage: {}
+                }
+            },
+            series: [
+                {
+                    name: 'Coin',
+                    type: 'map',
+                    selectedMode : 'multiple',
+                    roam: true,
+                    map: 'USA',
+                    emphasis: {
+                        label: {
+                            show: true
+                        }
+                    },
+                    textFixed: {
+                        Alaska: [20, -20]
+                    },
+                    data: coindata
+                }
+            ]
+        };
+        myChart.setOption(option);
+    });
+};  
+</script>
+</html>
